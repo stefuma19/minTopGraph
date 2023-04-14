@@ -52,18 +52,25 @@ def g_graph_estimation(data, sky, k_incr, group_maxrank, group_maxrank_query):
     print_graph(axs[0], g_points, targets)
     print_k_hat_query(axs[1], data, sky, k_hat_query)
 
+    # base_rect is the rectangle with q in [0,1] which should be ignored in area computation
+    base_rect = (group_maxrank - k_bar)
     x_all = [k for k, q, target in g_points]
     y_all = [q for k, q, target in g_points]
+    exact_area = metrics.auc(x_all, y_all) - base_rect
 
     x_appr = [x_all[0], x_all[-1]]
     y_appr = [y_all[0], y_all[-1]]
+    approx_area = metrics.auc(x_appr, y_appr) - base_rect
 
-    x_norm = [x / x_all[-1] for x in x_all]
-    y_norm = [y / y_all[0] for y in y_all]
+    # x_norm = [x / x_all[-1] for x in x_all]
+    # y_norm = [y / y_all[0] for y in y_all]
+    rect_area = (group_maxrank - k_bar) * (y_all[0]-1)
+    normalized_area = exact_area / rect_area
 
-    print("The approximated area under the curve is {}".format(metrics.auc(x_appr, y_appr)))
-    print("The exact area under the curve is {}".format(metrics.auc(x_all, y_all)))
-    print("The normalized area under the curve is {}".format(metrics.auc(x_norm, y_norm)))
+    print("The approximated area under the curve is {}".format(approx_area))
+    print("The exact area under the curve is {}".format(exact_area))
+    print("The rectangle area is {}".format(rect_area))
+    print("The normalized area under the curve is {}".format(normalized_area))
 
     plt.show()
 
