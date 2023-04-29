@@ -83,9 +83,8 @@ def g_graph_estimation_HD(data, sky, k_incr, group_maxrank):
             if q_i < q:
                 q = q_i
                 to_append = (k, q, str(target_point))
-            elif q_i == q:
-                to_append = (k, q, "multi")
-            else:  # TODO: valutare con q_i invece di q
+                break
+            else:
                 to_append = (k, q, "multi")
 
         if k >= group_maxrank and len(g_points) >= 1:
@@ -132,9 +131,8 @@ def g_graph_estimation_HD_without_group_maxrank(data, sky, k_incr):
             if q_i < q:
                 q = q_i
                 to_append = (k, q, str(target_point))
-            elif q_i == q:
-                to_append = (k, q, "multi")
-            else:  # TODO: valutare con q_i invece di q
+                break
+            else:
                 to_append = (k, q, "multi")
 
         # add to the list k, q and id of the point
