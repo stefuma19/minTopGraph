@@ -45,12 +45,14 @@ if __name__ == "__main__":
 
     print("Loaded {} records from {}\n".format(data.shape[0], datafolder))
 
+    sigma = len(skyline)
     skyline = skyline.join(maxrank)
     if data.shape[1] > 2:
         skyline = skyline.join(cellsHD)
     else:
         skyline = skyline.join(cells)
-    skyline['maxrank'] = skyline['maxrank'] + 1
+    skyline['maxrank'] = skyline['maxrank']# + 1
+    # 1 should be added only if the maxrank is computed with Mouratidis' convention, i.e. min(maxrank) = 0
 
     # Computes the GroupMaxRank in 2 dimensions
     if data.shape[1] == 2:
@@ -60,6 +62,8 @@ if __name__ == "__main__":
             if gmr_cells[i].rank == group_maxrank:
                 group_maxrank_q0 = gmr_cells[i].start
                 break
+        if group_maxrank < len(skyline):
+            group_maxrank = len(skyline)
         print("The group maxrank is {} obtained with query ({}, {})".format(group_maxrank, group_maxrank_q0,
                                                                             1 - group_maxrank_q0))
     # Computes the GroupMaxRank in more than 2 dimensions if the flag is set
@@ -70,8 +74,8 @@ if __name__ == "__main__":
 
     if data.shape[1] == 2:
         data = data.rename(columns={data.columns[0]: "x", data.columns[1]: "y"})
-        g_graph_estimation_2D(data, skyline, k_incr, group_maxrank, group_maxrank_q0)
+        g_graph_estimation_2D(data, skyline, k_incr, group_maxrank, group_maxrank_q0, sigma)
     elif compute_group_max_rank == 1:
-        g_graph_estimation_HD(data, skyline, k_incr, group_maxrank)
+        g_graph_estimation_HD(data, skyline, k_incr, group_maxrank, sigma)
     else:  # compute_group_max_rank == 0
-        g_graph_estimation_HD_without_group_maxrank(data, skyline, k_incr)
+        g_graph_estimation_HD_without_group_maxrank(data, skyline, k_incr, sigma)

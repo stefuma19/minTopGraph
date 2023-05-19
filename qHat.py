@@ -201,6 +201,7 @@ def topkHD(k, data, query, verbose=False):
 
     return data[:k]
 
+
 def get_array_from_string(string):
     string = string.replace("[", "")
     string = string.replace("]", "")

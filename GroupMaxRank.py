@@ -125,4 +125,6 @@ def g_maxrank_HD(data, group):
             elif minorder == maxrank:
                 mincells += cells
 
+    if maxrank < len(group):
+        maxrank = len(group)
     return maxrank, mincells

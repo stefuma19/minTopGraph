@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 
 from qHat import q_hat_estimation2D, q_estimation2D, topk2D, q_hat_estimation_HD, q_estimationHD, topkHD
 from sklearn import metrics
+import math
 
 
-def g_graph_estimation_2D(data, sky, k_incr, group_maxrank, group_maxrank_query):
+def g_graph_estimation_2D(data, sky, k_incr, group_maxrank, group_maxrank_query, sigma):
     # points of the graph
     g_points = []
 
@@ -54,12 +55,12 @@ def g_graph_estimation_2D(data, sky, k_incr, group_maxrank, group_maxrank_query)
     print_graph2D(axs[0], g_points, targets)
     print_k_hat_query(axs[1], data, sky, k_hat_query)
 
-    compute_areas(g_points)
+    compute_areas(g_points, sigma)
 
     plt.show()
 
 
-def g_graph_estimation_HD(data, sky, k_incr, group_maxrank):
+def g_graph_estimation_HD(data, sky, k_incr, group_maxrank, sigma):
     # points of the graph
     g_points = []
 
@@ -102,12 +103,12 @@ def g_graph_estimation_HD(data, sky, k_incr, group_maxrank):
     # ----------------- PLOTTING AND AREAS COMPUTATION -----------------
     print_graphHD(g_points, targets)
 
-    compute_areas(g_points)
+    compute_areas(g_points, sigma)
 
     plt.show()
 
 
-def g_graph_estimation_HD_without_group_maxrank(data, sky, k_incr):
+def g_graph_estimation_HD_without_group_maxrank(data, sky, k_incr, sigma):
     # points of the graph
     g_points = []
 
@@ -144,7 +145,7 @@ def g_graph_estimation_HD_without_group_maxrank(data, sky, k_incr):
     # ----------------- PLOTTING AND AREAS COMPUTATION -----------------
     print_graphHD(g_points, targets)
 
-    compute_areas(g_points)
+    compute_areas(g_points, sigma)
 
     plt.show()
 
@@ -227,26 +228,59 @@ def print_k_hat_query(ax, data, sky, query):
     ax.set_title("Single Query Retrival of Skyline")
 
 
-def compute_areas(g_points):
+def compute_areas(g_points, sigma):  # sigma is the cardinality of the skyline
+    print('sigma = {}'.format(sigma))
     k_hat = g_points[-1][0]
     q_hat = g_points[0][1]
     k_bar = g_points[0][0]
     # side_rect is the rectangle with k in [1, k_bar] which should be added in area computation
-    side_rect = (q_hat - 1) * (k_bar - 1)
+    side_rect = (sigma - 1) * (k_bar - 1)
     # base_rect is the rectangle with q in [0,1] which should be ignored in area computation
     base_rect = (k_hat - k_bar)  # * 1
     x_all = [k for k, q, target in g_points]
     y_all = [q for k, q, target in g_points]
-    exact_area = metrics.auc(x_all, y_all) - base_rect + side_rect
+    # exact_area = metrics.auc(x_all, y_all) - base_rect + side_rect
+    exact_area = compute_exact_area(g_points, sigma, k_bar)
+    print("The exact area under the curve is {}".format(exact_area))
 
     x_appr = [x_all[0], x_all[-1]]
     y_appr = [y_all[0], y_all[-1]]
-    approx_area = metrics.auc(x_appr, y_appr) - base_rect + side_rect
-
-    rect_area = (g_points[-1][0] - k_bar) * (y_all[0] - 1) + side_rect
-    normalized_area = exact_area / rect_area
-
+    approx_area = metrics.auc(x_appr, y_appr) - base_rect + side_rect + (sigma - 1) * (k_bar - 1)
     print("The approximated area under the curve is {}".format(approx_area))
-    print("The exact area under the curve is {}".format(exact_area))
+
+    optimal_area = compute_optimal_area(sigma)
+    print("The optimal area under the curve is {}".format(optimal_area))
+
+    approx_opt_area = compute_approximate_area(sigma)
+    print("The approximated optimal area under the curve is {}".format(approx_opt_area))
+
+    ovh = (exact_area - optimal_area) / optimal_area
+    print("The overhead is {}".format(ovh))
+
+    rect_area = (g_points[-1][0] - k_bar) * (y_all[0] - 1) + (sigma - 1) * (k_bar - 1)
     print("The rectangle area is {}".format(rect_area))
+
+    normalized_area = exact_area / rect_area
     print("The normalized area under the curve is {}".format(normalized_area))
+
+
+def compute_optimal_area(sigma):
+    opt_area = 0
+    for k in range(1, sigma):
+        opt_area += (math.ceil(sigma / k) - 1)
+    return opt_area
+
+
+def compute_approximate_area(sigma):
+    gamma = 0.5772156649015329
+    opt_area = sigma * (2 * gamma - 1) + sigma * math.log(sigma - 1) + 1
+    return opt_area
+
+
+def compute_exact_area(points, sigma, k_bar):
+    y_all = [q - 1 for k, q, target in points]
+    result = sum(y_all)
+    print("result = {}".format(result))
+    result += (sigma - 1) * (k_bar - 1)
+    print("result = {}".format(result))
+    return result
